@@ -7,7 +7,11 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
 # Initialize the MCP app here
-mcp_app = FastMCP(name="BioMCP - Biomedical Model Context Protocol Server")
+# Use 0.0.0.0 to bind to all interfaces when running in worker mode
+mcp_app = FastMCP(
+    name="BioMCP - Biomedical Model Context Protocol Server",
+    host="0.0.0.0",  # noqa: S104 - Required for Docker container networking
+)
 
 
 class StrEnum(str, Enum):
