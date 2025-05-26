@@ -27,5 +27,8 @@ EXPOSE 8000
 # Set default mode to worker, but allow it to be overridden
 ENV MCP_MODE=stdio
 
+# Ensure uvicorn binds to all interfaces when in worker mode
+ENV UVICORN_HOST=0.0.0.0
+
 # Run the MCP server with configurable mode
 CMD ["sh", "-c", "biomcp run --mode ${MCP_MODE}"]

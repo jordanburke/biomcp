@@ -29,12 +29,14 @@ def run_server(
         logger.info("Starting MCP server with STDIO transport:")
         mcp_app.run(transport="stdio")
     elif mode == ServerMode.WORKER:
-        logger.info("Starting MCP server with Worker/SSE transport")
+        logger.info("Starting MCP server with FastAPI Worker/SSE transport")
         try:
             import uvicorn
 
             from ..workers.worker import app
 
+            # Run uvicorn directly with the FastAPI app
+            # This bypasses the MCP library's hardcoded localhost binding
             uvicorn.run(
                 app,
                 host="0.0.0.0",  # noqa: S104 - Required for Docker container networking
