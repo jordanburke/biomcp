@@ -1,11 +1,9 @@
 """Worker implementation for BioMCP."""
 
-import asyncio
 import json
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 
 from .. import logger, mcp_app
 
@@ -22,8 +20,8 @@ app.add_middleware(
 
 # Mount the MCP SSE app - this is the key change
 # This will handle /sse and /messages endpoints automatically
-sse_app = mcp_app.sse_app()
-app.mount("/", sse_app)
+stream_app = mcp_app.run(transport="streamable-http")
+app.mount("/", stream_app)
 
 
 # Keep your logging middleware if needed
@@ -77,51 +75,6 @@ async def handle_root_mcp_request(request: Request):
             media_type="application/json",
             status_code=500,
         )
-
-
-# Keep the /mcp endpoint for backward compatibility
-@app.post("/mcp")
-async def handle_mcp_endpoint(request: Request):
-    """Handle MCP protocol messages at the /mcp endpoint."""
-    return await handle_root_mcp_request(request)
-
-
-# Add the SSE endpoint
-@app.get("/sse")
-async def sse_endpoint():
-    """
-    Server-Sent Events (SSE) endpoint for remote MCP connections.
-
-    This endpoint establishes a persistent connection with the client
-    and sends events as they occur.
-    """
-    logger.info("SSE connection established")
-
-    async def event_generator():
-        init_metadata = {
-            "protocol_version": "1.9.1",
-            "server_capabilities": ["tools", "resources"],
-        }
-        yield f"event: ready\ndata: {json.dumps(init_metadata)}\n\n"
-        logger.info(f"SSE sent initial event: {init_metadata}")
-
-        # Keep the connection alive with keepalive events
-        while True:
-            await asyncio.sleep(15)
-            logger.debug("Sending keepalive")
-            yield ":keepalive\n\n"
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
 
 
 # Add OPTIONS endpoint for CORS preflight
